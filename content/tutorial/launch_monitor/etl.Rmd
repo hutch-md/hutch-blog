@@ -1,0 +1,485 @@
+---
+title: Getting Launch Monitor Data into R
+author: Michael Hutchinson
+date: '2022-01-02'
+slug: getting-launch-monitor-data-into-r
+categories: []
+tags: []
+subtitle: ''
+summary: ''
+authors: [Michael D Hutchinson]
+lastmod: '2022-01-02T16:00:40-08:00'
+featured: no
+image:
+  caption: ''
+  focal_point: ''
+  preview_only: no
+projects: []
+weight: 1
+
+---
+
+
+
+
+## What this tutorial covers
+
+As an analyst or data scientist, one thing they don’t tell you in school is how much time you’ll spend accessing, scraping, extracting, wrangling, munging, cleaning, transforming, shaping, prepping, and a hundred other verbs that all essentially mean “get the data into a form that allows us to cleanly analyze, visualize, or model.” 
+
+This kind of work tends to get abbreviated to three letters: **ETL** (or **ELT**), which stands for **E**xtract, **T**ransform, **L**oad, and it's exactly what we're going to do here.
+
+This first tutorial will cover:
+
+1. Exporting data from Foresight 
+2. Installing R and R-Studio
+3. Loading the data into R and prepping it for analysis
+
+Let's get started!
+
+***
+
+## STEP 1: Get Data
+
+I expect you'll eventually want to get your own data in here, but for the purposes of this tutorial I've provided an export of my data from a session on my GC3 comparing Driver and 3-Wood. If you don't plan on using your own data just yet, you can [**download the .csv  here**](https://www.dropbox.com/s/5w6kbrn97k9myk8/Foresight_Report_Numeric.csv?dl=0){target="_blank"} and skip ahead to [**step 2**](#install_r).
+
+If you have your own Foresight Launch Monitor or have access to one via a golf pro, fitter, or even your local golf superstore, I'm going to show you how to export a custom report that will look identical to my own. This way you hopefully won't need to modify any of the code.
+
+If you have a different kind of launch monitor (Trackman, Mevo+, etc...) and want to be able to analyze your data, feel free to email an export of your data to me at **michaeldavidhutchinson@gmail.com** and I can add some code to clean and work with it. Eventually I'd like to build a large database for different types of analysis, so if you have data, send it over.
+
+Anyway, here's how to export data with Foresight....
+
+1. From the Foresight range, **click on the icon that looks like a side view of ball flight data**.
+```{r, echo=FALSE, out.width="100%", fig.cap="Foresight Range"}
+knitr::include_graphics("https://res.cloudinary.com/hutch-md/image/upload/v1641170945/1._Foresight_Range_qb370v.png")
+```
+
+2. From this data view screen, click **EXPORT** in the top right corner.
+```{r, echo=FALSE, out.width="100%", fig.cap="Data View"}
+knitr::include_graphics("https://res.cloudinary.com/hutch-md/image/upload/v1641170934/2._Data_View_bojlna.png")
+```
+
+3. In the report manager view, you're going to **create a custom report**.
+```{r, echo=FALSE, out.width="100%", fig.cap="Report Manager View"}
+knitr::include_graphics("https://res.cloudinary.com/hutch-md/image/upload/c_scale,h_1080,w_1920/v1641170934/3._Report_Manager_View_m7e69m.png")
+```
+4. **Select all available fields for ball and club data**, regardless of whether your specific simulator captures the variable. This ensures consistency in the data across all reports so that the code runs as expected. It's also nice to have a report that just captures everything. Give the report a name and hit **Save/Add**.
+```{r, echo=FALSE, out.width="100%", fig.cap="Custom Report"}
+knitr::include_graphics("https://res.cloudinary.com/hutch-md/image/upload/c_scale,h_1080,w_1920/v1641170935/4._Custom_Report_Field_Selector_waizmi.png")
+```
+
+5. The name of your custom report will now appear in the list of the standard reports. Choose the report (the white report is the one that is currently selected). You can email or save it locally as a .csv. <br><br> I have exported both the "Human Friendly" and "Numeric" .csv versions, and they each need some work to get into a tidy dataset, but **the "Numeric" version is easier to work with**. <br><br>Save the exported file somewhere you'll be able to access it. We'll move it to its final location in a little bit.  
+```{r, echo=FALSE, out.width="100%", fig.cap="Custom Report"}
+knitr::include_graphics("https://res.cloudinary.com/hutch-md/image/upload/v1641170935/5._Report_Manager_Export_Screen_gmx691.png")
+```
+<br>
+Okay! Save that file somewhere you'll remember because we're going to come back to it in a bit.  
+
+***
+<a id="install_r"></a>
+  
+## STEP 2: Install R
+Assuming you don't already have it installed, there are tons of great tutorials out there about how to get up and running with R and R Studio, so I won't go into much detail here. **[This tutorial](https://www.datacamp.com/community/tutorials/installing-R-windows-mac-ubuntu){target="_blank"}** from Datacamp has everything you need to get started whether you're on Mac, Windows, or Ubuntu. If that doesn't work, a quick Google search will get you plenty of solid options.  
+
+***
+
+## STEP 3: Create New R Project
+
+Now that we have R installed, let's start by opening R Studio and creating a new project by going to: `File -> New Project.`
+
+You don't have to do these next steps exactly as I did, and the userflow may be slightly different depending on your OS and version, but it's good practice to create self contained new projects with organized directories, and as I'm learning, that's even more important if you want to build a website. Anyway, here's what that looks like...
+
+<div class = "row">
+<div class = "col-md-6">
+<br><br>1. Create project in a new directory.
+![](https://res.cloudinary.com/hutch-md/image/upload/v1641170935/B_-_1._New_Directory_tmbsqv.png)
+
+</div>
+  
+<div class = "col-md-6">
+<br><br>2. Select **New Project** as project type.
+![](https://res.cloudinary.com/hutch-md/image/upload/v1641170936/B_-_2._New_Project_m3l39p.png)
+</div>
+
+
+<div class = "col-md-6">
+<br><br> 3. Name your new directory
+![](https://res.cloudinary.com/hutch-md/image/upload/v1641170936/B_-_3._Create_New_Directory_lnaqpf.png)
+</div>
+  
+<div class = "col-md-6">
+<br><br>4. Create new R Script...
+![](https://res.cloudinary.com/hutch-md/image/upload/c_scale,h_757,w_1058/v1641186152/B_-_4._New_R_Script_jpojoa.png)
+</div>
+</div>
+
+<center>
+###  If you've made it this far, get pumped. We're about to get to the fun stuff.
+</center>
+
+<br>
+```{r, echo=FALSE, out.width="100%", fig.align='center'}
+knitr::include_graphics("https://media.giphy.com/media/QgkpTdk9UjsfpHqIVL/giphy.gif")
+```
+
+<br>
+  
+***
+<br>
+
+
+## STEP 4: Load the Data into R and Prep it for Analysis
+
+Okay! We're ready to start scripting in R. 
+
+<style>
+div.blue { background-color:#FF9800; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+### A Note to Beginners
+If you've never written any code before, that's totally fine! A lot of the following will be foreign to you, but you *should* be able to just copy/paste these code chunks into your R-script (the top left pane of your R-Studio screen) and run it line by line to produce the same results. If you get errors, try unblocking yourself by Googling the errors or looking for solutions on a site like [Stack Overflow](https://stackoverflow.com/). 
+
+I also highly recommend taking an "Intro to R" course like  [this one offered by Data Camp](https://www.datacamp.com/courses/free-introduction-to-r).
+
+</div><br>
+Let's start by loading the packages that are going to help with the manipulation and visualization of our data. You can think of packages like libraries of specialized functions that help us do things we can't do with R as it comes out of the box.
+<br>
+You can install them by copy/pasting the following code into your R script (top-left pane), and running in the terminal (low-left pane) by clicking "Run" `(Mac: Cmd + Return, Windows: Ctrl + Enter)`.
+
+```{r}
+# Let's do this in two steps.
+# First, create a vector of the packages we'll need for this tutorial
+packages <- c('tidyverse', 'janitor', 'corrplot', 'ggthemes', 'DT', 'widgetframe')
+
+```
+
+
+```{r eval = FALSE}
+# Now, pass the vector you just created into the pkgs 
+# argument of the install.packages() function
+install.packages(pkgs = packages)
+
+```
+
+```{r message = FALSE, warning = FALSE}
+# We can load them one by one using the library function
+library(tidyverse)
+library(janitor)
+library(corrplot)
+library(ggthemes) 
+library(DT)
+library(widgetframe)
+```
+
+```{r eval = FALSE, message = FALSE, warning = FALSE}
+# Or we can do it the fancy way. Learning the `apply` set of 
+# functions will save you a lot of time in R
+lapply(X = packages, FUN = require, character.only = TRUE)
+```
+
+You may get some warning messages, and if you run into trouble, the only packages we **really** need for this tutorial are `tidyverse` and `janitor`, so get rid of headaches if necessary.
+
+When we created a new project, we created a directory to store all files associated with the project. Let's go ahead and use the `getwd()` function to check where that working directory is on our machine. 
+
+```{r eval = FALSE}
+# Check our current working directory
+getwd()
+```
+
+```{r echo = FALSE}
+print('/Users/yourname/project_directory')
+```
+
+Yours will likely look different, but the important thing to realize is that this location is where R will look for any data you're looking to import. It's also where it will write anything we export.
+
+Now, let's use the `dir.create()` function to create a subfolder where we'll store our Foresight report data.
+
+```{r eval = FALSE}
+# Create a new folder within our working directory called "Data"
+dir.create("Data")
+```
+<style>
+div.blue { background-color:##FF9800; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+### A Note on Functions
+If you ever have questions about the specific functions and the arguments they take, you can add a question mark before the function name and run it in your console to get the documentation. For instance, running `?read_csv()` will tell us about that function.
+
+</div><br>
+
+**Take your launch monitor data file and save it into the folder you just created.** For your first run, I'd suggest just downloading the **[sample data](https://www.dropbox.com/s/5w6kbrn97k9myk8/Foresight_Report_Numeric.csv?dl=0)** I've provided so that if you run into trouble with running any of the following code, we can be sure it's not a problem with your export.
+
+We're now going to read that dataset into R. Steps explained within the #commentary of the code. 
+
+
+```{r message = FALSE}
+# First, let's practice creating variables by making one for the 
+# path from the working directory to the data we just stored
+file_name <- "Data/Foresight_Report_Numeric.csv"
+
+# Next, we'll make use of the read_csv() function to pull in our dataset. 
+# You can see here that the read_csv() function is accepting the file_name
+# object we just created.
+
+# The first line of the Foresight report contains the name of the golfer
+# and datetime of the launch monitor session.
+report_details <- read_csv(file = file_name, col_names = FALSE, trim_ws = TRUE, n_max = 1)
+
+
+```
+
+Extract some metadata about the session that we'll use later
+```{r message = FALSE}
+# Some regex to extract the username and get datetime values
+# We'll add these as columns back into our dataset later
+username <- str_extract(report_details$X1, "(?<=: ).*(?= -)")
+datetime <- as.POSIXct(str_extract(report_details$X1, "(?<= - ).*"), format = '%m/%e/%Y %I:%M %p', tz=Sys.timezone())
+```
+
+Now, let's read in the variable names from our report.
+
+```{r message = FALSE}
+# # In the Foresight reports I've seen, the names of the variables come in the second row.
+# # We pull those in here by skipping the first row of our data
+variables <- read_csv(file_name, skip = 1, col_names = FALSE, trim_ws = TRUE, n_max = 1)
+
+```
+Next, let's pull in the full tablee and use our `variables` object to name the columns. 
+
+```{r message = FALSE}
+
+# We then pull in the actual data
+raw_data <- read_csv(file_name, skip = 4, col_names = FALSE, trim_ws = TRUE)
+
+# Change the column names of the raw data to our variable names
+colnames(raw_data) <- variables
+
+```
+
+Let's take a look at our dataset using the `glimpse()` function
+
+
+```{r message = FALSE}
+# Take a look at our data
+glimpse(raw_data)
+
+```
+
+Here we get our first peak our data in its table format (technically it's a tibble, but we won't get into that here).
+
+If you are using the sample data or followed the steps to export your own data, you should have a table with 25 variables that is roughly as many observations (rows) as balls hit during your session. I say "roughly" as many because if we look a little bit closer, there are some issues that may stand out.
+
+```{r}
+tail(raw_data)
+
+```
+
+If you look closely you'll there are a couple summary rows that give the average and standard deviations for each club hit during your session. That's helpful if we're just wanting to examine a .csv, but we're going to go a bit deeper than that here, and if we want to look at summaries, we'll create them on our own.
+
+
+<style>
+div.blue { background-color:##FF9800; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+
+### A Note on Data Prep
+
+In addition to removing the `Average` and `Std. Dev.` summary rows, there are a few other things we need to do to get this dataset into shape. We could take those tasks one at a time as we encounter them, but that can be inefficient, if for no other reason than you end up with a bunch of intermediate tables called `temp_data_1`, `temp_data_2`, and so on.
+
+Instead, we can use the *%>%* (called a pipe operator), that allows us to take the output from one step and perform additional manipulation in the next. You can think of it as the "and then" operator because it's telling R, "take the output from the last step, **and then** do X". I'll show what I mean.
+
+</div><br>
+
+In this next chunk of code, I'm going to create a new table called `clean_data`. The first thing I'm going to feed into `clean_data` will be our `raw_data` table. I'm then going to perform three separate transformations before returning our new `clean_data` table.
+
+```{r warning = FALSE}
+# Create new table called clean_data. 
+# Start with raw_data table
+# and then change the casing of the column names
+# and remove any rows that are blank or have 'Average' or 'Std. Dev.' 
+clean_data <- raw_data %>%
+  clean_names(case = "snake") %>% 
+  # Basically reads "don't keep any rows where the value for the club variable is one of these
+  filter(! club %in% c('Average', 'Std. Dev.', NA)) %>% 
+  # Coerce all our variables, except for "club" and "ball" to numerics.
+  # This ensures that for any values where we didn't get a reading, 
+  # we get a NA value rather than the '--' that comes standard in the Foresight report
+  mutate_at(vars(-club, -ball), as.numeric)
+
+```
+
+There's one more step we should probably take now before we begin our analysis. Let's look at the values for a variable like 'offline'. Note, putting a `$` after the name of your table allows you to access a specific variable
+
+```{r}
+# This will return the values from the 'offline' column of the 'clean_data' table
+clean_data$offline
+
+```
+
+If you have any kind of a normal shot pattern, some of these values will be negative and some will be positive. The negative values are shots that were missed to the left, the positive values are shots that were missed to the right. When we begin exploring our data, it would be nice to be able to do things like a simple count of the number of shots that were missed left, without having to do additional manipulation.
+
+We have a similar issue with the variables for `side_angle`, `sidespin`, `tilt_angle`, `angle_of_attack`, and `club_path`. If you have a GCQuad, you may have to do similar transforms for `face_to_path`, `lie`, `closure_rate`, `face_impact_lateral` and `face_impact_vertical`. If you have an example dataset with those variables, shoot it my way and I'll add some code to the repo.
+
+Anyway, let's make use of the `mutate()` function to create new variables for these directional categories. If you'd like to know more about the `case_when()` function, check out [**this tutorial**](https://www.sharpsightlabs.com/blog/case-when-r/).
+
+Additionally, we're going to add back in our values for `username` and `datetime` so that if we build a larger dataset of multiple sessions, or multiple people, we'll have an easy way to compare. 
+
+<style>
+div.blue { background-color:###FF9800; border-radius: 5px; padding: 20px;}
+</style>
+<div class = "blue">
+
+### A Note to Lefties 
+I haven't verified that these transformations are all correct for left-handed golfers, so if you see something I missed or have left-handed Foresight data you want to share, let me know.
+
+</div><br>
+
+
+```{r}
+transformed_data <- clean_data %>% 
+  mutate(side_angle_dir = case_when(side_angle > 0 ~ 'Right', side_angle < 0 ~ 'Left', 
+                                    side_angle == 0 ~ 'Center', TRUE ~ 'No Reading'),
+         sidespin_dir = case_when(sidespin > 0 ~ 'Right', sidespin < 0 ~ 'Left', 
+                                  sidespin == 0 ~ 'No Sidespin', TRUE ~ 'No Reading'),
+         tilt_angle_dir = case_when(tilt_angle > 0 ~ 'Right', tilt_angle < 0 ~ 'Left',
+                                    tilt_angle == 0 ~ 'No Tilt Angle', TRUE ~ 'No Reading'),
+         offline_dir = case_when(offline > 0 ~ 'Right', offline < 0 ~ 'Left',
+                                 offline == 0 ~ 'Center', TRUE ~ 'No Reading'),
+         angle_of_attack_dir = case_when(angle_of_attack > 0 ~ 'Up', angle_of_attack < 0 ~ 'Down',
+                                         angle_of_attack == 0 ~ 'Neutral AoA', TRUE ~ 'No Reading'),
+         club_path_dir = case_when(club_path > 0 ~ 'In-to-Out', club_path < 0 ~ 'Out-to-In',
+                                   club_path == 0 ~ 'Neutral Path', TRUE ~ 'No Reading'),
+         face_to_path_dir = case_when(as.numeric(face_to_path) > 0 ~ 'In-to-Out', as.numeric(face_to_path)  < 0 ~ 'Out-to-In',
+                                   as.numeric(face_to_path)  == 0 ~ 'Neutral Path', FALSE ~ 'No Reading'),
+         date_time = datetime,
+         username = username
+         )
+```
+
+Okay! We now have a clean dataset that's ready for analysis. Let's take a look!
+
+```{r message = FALSE}
+
+head(transformed_data)
+
+datatable(transformed_data, rownames = FALSE, filter = "top", options = list(pageLength = 5))
+```
+
+
+```{r}
+
+ts <- transformed_data %>% DT::datatable()
+```
+
+```{r}
+widgetframe::frameWidget(ts)
+```
+
+
+## STEP 5: Ask Questions
+
+I'll cover data visualization and exploratory analysis in the next tutorial, but it may be helpful to get a taste for where we're headed, so let's jump ahead a couple steps and take a look at how our variables are correlated by using the `corrplot` package. 
+
+```{r out.width="90%", fig.align = "center", fig.dim = c(8,6), echo = FALSE}
+# # You'll need to install the corrplot library before loading it
+library(corrplot)
+
+# Function to remove any columns with NA values
+not_any_na <- function(x) all(!is.na(x))
+
+driver_numbers <- transformed_data %>%
+  filter(club == 'Driver') %>%
+  select_if(is.numeric) %>%
+  select(where(not_any_na))
+
+M = cor(driver_numbers)
+
+# corrplot(M, method = 'number')
+corrplot(M, method = 'color', order = 'alphabet')
+
+```
+If we want something more interactive, we can use the `plotly` package.
+
+<script>
+  window.PlotlyConfig = {MathJaxConfig: 'local'}
+</script>
+
+```{r message = FALSE, warning = FALSE, out.width="90%", fig.align = "center", fig.dim = c(6,6), echo = FALSE}
+# Code taken and modified from here:
+# https://rstudio-pubs-static.s3.amazonaws.com/584641_6688e47a541f40fcb54841b3ef0725ae.html
+library(plotly)
+
+axis = list(showline=FALSE,
+            zeroline=FALSE,
+            gridcolor='#ffff',
+            ticklen=4,
+            titlefont=list(size=13))
+
+
+
+p <- transformed_data %>%
+  select(club, total, carry, launch_angle, backspin, club_speed, efficiency, angle_of_attack) %>%
+  plot_ly() %>%
+  add_trace(
+    type = 'splom',
+    dimensions = list(
+    list(label='total', values=~`total`),
+    list(label='carry', values=~`carry`),
+    list(label='launch_angle', values=~`launch_angle`),
+    list(label='backspin', values=~`backspin`),
+    list(label='club_speed', values=~`club_speed`),
+    list(label='efficiency', values=~`efficiency`),
+    list(label='angle_of_attack', values=~`angle_of_attack`)
+    ),
+    text=~factor(club, labels=c("3-Wood", "Driver")),
+    diagonal=list(visible=F),
+    marker = list(
+      color = '#ef553b',
+      size = 5,
+      line = list(
+        width = 1,
+        color = 'rgb(230,230,230)'
+      )
+    )
+  ) %>%
+  layout(
+    title = "Interactive Scatterplot of Launch Monitor Data",
+    hovermode='closest',
+    dragmode = 'select',
+    plot_bgcolor='rgba(240,240,240, 0.95)',
+    xaxis=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    yaxis=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    xaxis2=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    yaxis2=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    xaxis3=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    yaxis3=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    xaxis4=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', nticks = 3, titlefont=list(size=13)),
+    yaxis4=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    xaxis5=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    yaxis5=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    xaxis6=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13)),
+    yaxis6=list(domain=NULL, showline=F, zeroline=F, gridcolor='#ffff', titlefont=list(size=13))
+  ) %>%
+  style(showupperhalf = F)
+
+
+p
+
+json <- plotly_json(p, FALSE)
+write(json, 'test.json')
+```
+
+
+{{< plotly json="test.json" height="400px" >}}
+
+```{r}
+htmltools::tags$iframe(
+  src = "p1.html", 
+  scrolling = "no", 
+  seamless = "seamless",
+  frameBorder = "0"
+)
+```
+
