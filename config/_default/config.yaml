@@ -4,7 +4,7 @@
 # This file is formatted using YAML syntax - learn more at https://learnxinyminutes.com/docs/yaml/
 
 title: Hutch Blog # Website name
-baseurl: 'https://online-courses-template.netlify.app/' # Website URL
+baseurl: 'https://hutch-blog.netlify.app/' # Website URL
 copyright: '© {year} Michael Hutchinson' # Footer text, e.g. '© {year} Me'
 
 ############################
